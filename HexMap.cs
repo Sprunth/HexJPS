@@ -15,7 +15,7 @@ namespace HexJPS
         }
 	    public static Tuple<int, int, int> AxialToCubic(int axialX, int axialZ)
 	    {
-	        return  new Tuple<int, int, int>(axialX, axialZ, -1*axialX - axialZ);
+	        return  new Tuple<int, int, int>(axialX, -1*axialX - axialZ, axialZ);
 	    }
 
         public static Tuple<int, int> CubicToAxial(Tuple<int, int, int> cubic)
@@ -27,28 +27,22 @@ namespace HexJPS
 	        return new Tuple<int, int>(cubeX, cubeZ);
 	    }
 
-		private readonly Dictionary<Tuple<int, int>, Hexagon<T>> _hexes;
+	    private readonly int mapX, mapY;
+	    private readonly Hexagon<T>[,] _hexes; 
 	    private readonly HashSet<Hexagon<T>> _obstacles;
 
-		public HexMap()
+		public HexMap(int maxMapX, int maxMapY)
 		{
-			_hexes = new Dictionary<Tuple<int, int>, Hexagon<T>>();
+		    mapX = maxMapX;
+		    mapY = maxMapY;
+			_hexes = new Hexagon<T>[maxMapX,maxMapY];
             _obstacles = new HashSet<Hexagon<T>>();
-
-            Debug.Log(new Tuple<int, int>(0, 0).GetHashCode());
-            Debug.Log(new Tuple<int, int>(0, 0).GetHashCode());
 		}
 
 		public Hexagon<T> this[int x, int y]
 		{
-			get { return _hexes[new Tuple<int, int>(x,y)]; }
-		    set
-		    {
-                Debug.Log("Adding " + x + " " + y + " to hexes list");
-		        var tup = new Tuple<int, int>(x, y);
-                _hexes.Add(tup, value);
-                Debug.Log(_hexes[tup]);
-		    }
+			get { return _hexes[x, y]; }
+		    set { _hexes[x, y] = value; }
 		}
 
 	    public bool AddObstacle(Hexagon<T> hex)
@@ -106,29 +100,60 @@ namespace HexJPS
 	    private void SetupNeighbors()
 	    {
             // TODO: Optimize this?
-            //foreach (var hexagon in _hexes.Values)
-	        {
-	            var hexagon = _hexes[new Tuple<int, int>(0, 0)];
+            for (var x = 0; x < mapX; x++)
+            {
+                for (var y = 0; y < mapY; y++)
+                {
 
-                var currX = hexagon.CubeX;
-                var currY = hexagon.CubeY;
-                var currZ = hexagon.CubeZ;
+                    var hexagon = _hexes[x, y];
 
-                var plusXKey = CubicToAxial(currX + 0, currY + 1, currZ - 1);
-                var plusYKey = CubicToAxial(currX + 1, currY + 0, currZ - 1);
-                var plusZKey = CubicToAxial(currX + 1, currY - 1, currZ + 0);
-                var minusXKey = CubicToAxial(currX + 0, currY - 1, currZ + 1);
-                var minusYKey = CubicToAxial(currX - 1, currY + 0, currZ + 1);
-                var minusZKey = CubicToAxial(currX - 1, currY + 1, currZ + 0);
+                    var currX = hexagon.CubeX;
+                    var currY = hexagon.CubeY;
+                    var currZ = hexagon.CubeZ;
 
-                Debug.Log(plusXKey + " " + plusYKey + " " + plusZKey);
+                    var plusXKey = CubicToAxial(currX + 0, currY + 1, currZ - 1);
+                    var plusYKey = CubicToAxial(currX + 1, currY + 0, currZ - 1);
+                    var plusZKey = CubicToAxial(currX + 1, currY - 1, currZ + 0);
+                    var minusXKey = CubicToAxial(currX + 0, currY - 1, currZ + 1);
+                    var minusYKey = CubicToAxial(currX - 1, currY + 0, currZ + 1);
+                    var minusZKey = CubicToAxial(currX - 1, currY + 1, currZ + 0);
 
-                hexagon.Neighbors[HexDirection.PlusX]   =_hexes.ContainsKey(plusXKey)  ? _hexes[plusXKey]   : null;
-                hexagon.Neighbors[HexDirection.PlusY]   =_hexes.ContainsKey(plusYKey)  ? _hexes[plusYKey]   : null;
-                hexagon.Neighbors[HexDirection.PlusZ]   =_hexes.ContainsKey(plusZKey)  ? _hexes[plusZKey]   : null;
-                hexagon.Neighbors[HexDirection.MinusX]  =_hexes.ContainsKey(minusXKey) ? _hexes[minusXKey]  : null;
-                hexagon.Neighbors[HexDirection.MinusY]  =_hexes.ContainsKey(minusYKey) ? _hexes[minusYKey]  : null;
-                hexagon.Neighbors[HexDirection.MinusZ]  =_hexes.ContainsKey(minusZKey) ? _hexes[minusZKey]  : null;
+                    /*
+                    Debug.Log(plusXKey);
+                    Debug.Log(plusYKey);
+                    Debug.Log(plusZKey);
+                    Debug.Log(minusXKey);
+                    Debug.Log(minusYKey);
+                    Debug.Log(minusZKey);
+                     * */
+
+                    SetupNeighborHelper(hexagon, HexDirection.PlusX, plusXKey.First, plusXKey.Second);
+                    SetupNeighborHelper(hexagon, HexDirection.PlusY, plusYKey.First, plusYKey.Second);
+                    SetupNeighborHelper(hexagon, HexDirection.PlusZ, plusZKey.First, plusZKey.Second);
+                    SetupNeighborHelper(hexagon, HexDirection.MinusX, minusXKey.First, minusXKey.Second);
+                    SetupNeighborHelper(hexagon, HexDirection.MinusY, minusYKey.First, minusYKey.Second);
+                    SetupNeighborHelper(hexagon, HexDirection.MinusZ, minusZKey.First, minusZKey.Second);
+                }
+            }
+	        
+	    }
+
+        /// <summary>
+        /// Handle assignment of the hexagon neighbors. Does bounds checking
+        /// </summary>
+        /// <param name="hexagon"></param>
+        /// <param name="dir"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+	    private void SetupNeighborHelper(Hexagon<T> hexagon, HexDirection dir, int x, int y)
+	    {
+            if ((x < 0 || x >= mapX) || (y < 0 || y >= mapY))
+            {
+                hexagon.Neighbors[dir] = null;
+            }
+            else
+            {
+                hexagon.Neighbors[dir] = _hexes[x, y];
             }
 	    }
 
@@ -179,6 +204,11 @@ namespace HexJPS
 	            hash = hash*29 + Second.GetHashCode();
 	            return hash;
 	        }
+	    }
+
+	    public override string ToString()
+	    {
+	        return "Tuple2 " + First + " " + Second;
 	    }
 	}
     public class Tuple<T1, T2, T3>
