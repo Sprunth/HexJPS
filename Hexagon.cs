@@ -5,7 +5,7 @@ using System.Text;
 
 namespace HexJPS
 {
-    public class Hexagon<T>
+    public class Hexagon<T> : IComparable<Hexagon<T>>
     {
         public int AxialX { get; private set; }
         public int AxialZ { get; private set; }
@@ -16,6 +16,14 @@ namespace HexJPS
 
         public T Obj { get; set; }
         public bool IsObstacle { get; set; } // TODO: not synced with Hexmap's list of obstacles...
+
+        /// <summary>
+        /// Used for the A* + JPS priority queue.
+        /// DistanceFromStart is the number of hexes traveled from start.
+        /// prevJumpPoint holds the jump point which this hexagon comes from. This allows us to determine the path in reverse.
+        /// </summary>
+        internal int DistanceFromStart { get; set; }
+        internal Hexagon<T> prevJumpPoint { get; set; } 
 
         public readonly Dictionary<HexDirection, Hexagon<T>> Neighbors; 
 
@@ -59,5 +67,11 @@ namespace HexJPS
             };
         }
 
+
+
+        public int CompareTo(Hexagon<T> other)
+        {
+            return this.DistanceFromStart.CompareTo(other.DistanceFromStart);
+        }
     }
 }

@@ -86,12 +86,12 @@ namespace HexJPS
 	        SetupNeighbors();
 
             // for testing
-            return new List<Hexagon<T>>(_obstacles);
-            /*
+            //return new List<Hexagon<T>>(_obstacles);
+            
 	        if (Start == null || End == null)
 	            return null;
 	        return JPS<T>.JPSPath(this);
-            */
+            
 	    }
 
         /// <summary>
@@ -119,13 +119,17 @@ namespace HexJPS
                     var minusZKey = CubicToAxial(currX - 1, currY + 1, currZ + 0);
 
                     /*
-                    Debug.Log(plusXKey);
-                    Debug.Log(plusYKey);
-                    Debug.Log(plusZKey);
-                    Debug.Log(minusXKey);
-                    Debug.Log(minusYKey);
-                    Debug.Log(minusZKey);
-                     * */
+                    if (hexagon.Equals(Start))
+                    {
+                        Debug.Log("plusx" + plusXKey);
+                        Debug.Log("plusy" + plusYKey);
+                        Debug.Log("plusz" + plusZKey);
+                        Debug.Log("minusx" + minusXKey);
+                        Debug.Log("minusy" + minusYKey);
+                        Debug.Log("minusz" + minusZKey);
+                    
+                    }*/
+                    
 
                     SetupNeighborHelper(hexagon, HexDirection.PlusX, plusXKey.First, plusXKey.Second);
                     SetupNeighborHelper(hexagon, HexDirection.PlusY, plusYKey.First, plusYKey.Second);
@@ -136,6 +140,13 @@ namespace HexJPS
                 }
             }
 	        
+	    }
+
+	    public void Test()
+	    {
+            SetupNeighbors();
+	        var fn = JPS<T>.HasForcedNeighbor(Start, HexDirection.PlusZ);
+	        Debug.Log(fn);
 	    }
 
         /// <summary>
